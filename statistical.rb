@@ -22,14 +22,16 @@ module Statistical
     max_size = content.map { |file| File.size(file) }.max
 
     puts "Images parameters:"
-    puts "Average image size: #{(avg_size * 1000).to_i} KB"
-    puts "Minimum image size: #{min_size} KB"
-    puts "Maximum image size: #{max_size} KB"
-    puts "\nPercent of products which has image is #{((1 - count_empty_images.to_f / content.size) * 100).round(2)}%"
+    puts "Average image size: #{(avg_size * 1000).to_i} B"
+    puts "Minimum image size: #{min_size} B"
+    puts "Maximum image size: #{max_size} B"
+
+    puts "\nPercent of products which has image is " \
+         "#{((1 - count_empty_images.to_f / content.size) * 100).round(2)}%"
   end
 
   def single_category?
-    return true if count_products.size == 1
+    count_products.size == 1
   end
 
   def print_product_statistic
@@ -37,8 +39,8 @@ module Statistical
     total = products.values.inject(0, :+)
     puts "\nProducts statistics:"
     products.each do |category, product_quantity|
-      puts "Category: #{category} contains #{product_quantity} products. \
-      It's a #{(product_quantity.to_f / total * 100).round(2)}% of total."
+      puts "Category: #{category} contains #{product_quantity} products. " \
+           "It's a #{(product_quantity.to_f / total * 100).round(2)}% of total."
     end
   end
 
