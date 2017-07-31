@@ -1,15 +1,13 @@
-require 'securerandom'
 require './item'
 
 class Category < Item
-
   @@level = 0
 
   def initialize(category)
-    @type = self.check_category
+    @type = check_category
     @name = category.text.gsub(/[\d\t]/, "")
     @group_name = "-"
-    @icon_name = SecureRandom.uuid + ".jpg"
+    @icon_name = "-"
     @id = category['href']
   end
 

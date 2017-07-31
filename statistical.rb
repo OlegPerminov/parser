@@ -1,7 +1,6 @@
 require 'csv'
 
 module Statistical
-
   IMG_FOLDER = "./images"
   DB_NAME = "catalog.txt"
 
@@ -45,8 +44,10 @@ module Statistical
   end
 
   def count_products
-    database = CSV.read(DB_NAME, { :col_sep => "\t" })
-    database.each_with_object(Hash.new(0)) { |line, hash| hash[line[2]] += 1 if line[0] == "product" }
+    database = CSV.read(DB_NAME, col_sep: "\t")
+    database.each_with_object(Hash.new(0)) do |line, hash|
+      hash[line[2]] += 1 if line[0] == "product"
+    end
   end
 
   def count_empty_images
