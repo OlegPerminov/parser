@@ -1,21 +1,14 @@
-require './item'
-
-class Category < Item
-  @@level = 0
-
-  def initialize(category)
-    @type = check_category
+class Category
+  def initialize(category, category_level)
+    @type = category_level
     @name = category.text.gsub(/[\d\t]/, "")
-    @group_name = "-"
-    @icon_name = "-"
     @id = category['href']
+
+    write_data
   end
 
-  def self.up_level
-    @@level += 1
-  end
-
-  def check_category
-    @@level < 1 ? "category" : "subcategory"
+  def write_data
+    line = "#{@type}\t#{@name}\t-\t-\t#{@id}"
+    File.open("catalog.txt", "a") { |file| file.puts line.delete("\"") }
   end
 end

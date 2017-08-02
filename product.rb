@@ -1,10 +1,7 @@
 require 'mechanize'
 require 'securerandom'
-require './item'
 
-class Product < Item
-  @@products_count = 0
-
+class Product
   def initialize(product, page)
     @type = "product"
     @name = product.at("a[@class='name']").text
@@ -13,18 +10,18 @@ class Product < Item
                  product.at("a[@class='img']")['rel'].split("/")[-1].split(".")[-1]
     @id = product.at("a[@class='name']")['href'].split("/")[4]
 
-    @@products_count += 1
-
     icon_url = "http://www.a-yabloko.ru" + product.at("a[@class='img']")['rel']
     save_image(icon_url)
-  end
-
-  def self.products_count
-    @@products_count
+    write_data
   end
 
   def save_image(icon_url)
     img = Mechanize.new.get(icon_url)
     img.save("./images/#{@icon_name}")
+  end
+
+  def write_data
+    line = "#{@type}\t#{@name}\t#{@group_name}\t#{@icon_name}\t#{@id}"
+    File.open("catalog.txt", "a") { |file| file.puts line.delete("\"") }
   end
 end

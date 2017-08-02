@@ -1,6 +1,9 @@
 require 'mechanize'
+require 'set'
 require 'csv'
 require './statistical'
+require './category'
+require './product'
 
 class Parser
   include Statistical
@@ -8,6 +11,14 @@ class Parser
   def initialize(link = 'http://www.a-yabloko.ru/')
     @agent = Mechanize.new
     @page = @agent.get(link).link_with(text: "Каталог товаров").click
+
+    @category_level = "category"
+    @products_count = 0
+
+    @records_id = Set.new
+    CSV.foreach(DB_NAME, col_sep: "\t") do |row|
+      @records_id << row[4]
+    end
   end
 
   def parse(page = @page)
@@ -16,14 +27,9 @@ class Parser
       find_products(page)
     else
       categories = categories.css("a")
-      categories.each do |category|
-        unless already_written?(category['href'])
-          write_data(Category.new(category))
-        end
-      end
-
+      check_categories(categories)
       categories.map do |category|
-        Category.up_level
+        @category_level = "subcategory"
         parse(Mechanize::Page::Link.new(category, @agent, page).click)
       end
     end
@@ -33,29 +39,43 @@ class Parser
 
   def find_products(page)
     loop do
-      product_links = page.at("table[@class='goods']").css("tr")
-      product_links.each do |product|
-        unless already_written?(product.at("a[@class='name']")['href'].split("/")[4])
-          write_data(Product.new(product, page))
-          print_statistics if (Product.products_count % 1000).zero?
-        end
-      end
+      products = page.at("table[@class='goods']").css("tr")
+      check_products(products, page)
       return if page.link_with(text: "Следующая").nil?
       page = page.link_with(text: "Следующая").click
     end
   end
 
-  def already_written?(item_id)
-    return false if File.zero?(DB_NAME) || !File.exist?(DB_NAME)
-    items = {}
-    CSV.foreach(DB_NAME, col_sep: "\t") do |row|
-      items[row[4]] = true unless row.empty?
+  def check_categories(categories)
+    categories.each do |category|
+      category_id = category['href']
+      unless already_written?(category_id)
+        Category.new(category, @category_level)
+        @records_id << category_id
+      end
     end
-    items[item_id]
   end
 
-  def write_data(item)
-    line = "#{item.type}\t#{item.name}\t#{item.group_name}\t#{item.icon_name}\t#{item.id}"
-    File.open(DB_NAME, "a") { |file| file.puts line.delete("\"") }
+  def check_products(products, page)
+    products.each do |product|
+      product_id = product.at("a[@class='name']")['href'].split("/")[4]
+      unless already_written?(product_id)
+        Product.new(product, page)
+        @records_id << product_id
+        @products_count += 1
+        fetch_statistic if (@products_count % 1000).zero?
+      end
+    end
+  end
+
+  def already_written?(item_id)
+    @records_id.include?(item_id)
+  end
+
+  def fetch_statistic
+    return if single_category?
+    print_images_statistic
+    print_products_statistic
+    exit!
   end
 end
